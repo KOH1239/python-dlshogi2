@@ -18,8 +18,8 @@ HuffmanCodedPosAndEvalComment = np.dtype(
      ('eval', dtypeEval),
      ('bestMove16', dtypeMove16),
      ('gameResult', dtypeGameResult),
-     ('comment_index', np.int32),
      ('dummy', np.uint8),
+     ('comment_index', np.int32),
 	])
 
 parser = argparse.ArgumentParser()
