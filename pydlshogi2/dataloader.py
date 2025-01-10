@@ -4,9 +4,22 @@ import numpy as np
 import logging
 import torch
 
-from cshogi import Board, HuffmanCodedPosAndEval
+from cshogi import Board
 from pydlshogi2.features import FEATURES_NUM, make_input_features, make_move_label, make_result
 
+dtypeHcp = np.dtype((np.uint8, 32))
+dtypeEval = np.dtype(np.int16)
+dtypeMove16 = np.dtype(np.int16)
+dtypeGameResult = np.dtype(np.int8)
+
+HuffmanCodedPosAndEvalComment = np.dtype(
+    [('hcp', dtypeHcp),
+     ('eval', dtypeEval),
+     ('bestMove16', dtypeMove16),
+     ('gameResult', dtypeGameResult),
+     ('dummy', np.uint8),
+     ('comment_index', np.int32),
+	])
 
 class HcpeDataLoader:
     def __init__(self, files, batch_size, device, shuffle=False):
@@ -18,10 +31,12 @@ class HcpeDataLoader:
         self.torch_features = torch.empty((batch_size, FEATURES_NUM, 9, 9), dtype=torch.float32, pin_memory=True)
         self.torch_move_label = torch.empty((batch_size), dtype=torch.int64, pin_memory=True)
         self.torch_result = torch.empty((batch_size, 1), dtype=torch.float32, pin_memory=True)
+        self.torch_comment_index = torch.empty((batch_size), dtype=torch.int32, pin_memory=True)
 
         self.features = self.torch_features.numpy()
         self.move_label = self.torch_move_label.numpy()
         self.result = self.torch_result.numpy().reshape(-1)
+        self.comment_index = self.torch_comment_index.numpy()
 
         self.i = 0
         self.executor = ThreadPoolExecutor(max_workers=1)
@@ -35,7 +50,7 @@ class HcpeDataLoader:
         for path in files:
             if os.path.exists(path):
                 logging.info(path)
-                data.append(np.fromfile(path, dtype=HuffmanCodedPosAndEval))
+                data.append(np.fromfile(path, dtype=HuffmanCodedPosAndEvalComment))
             else:
                 logging.warn('{} not found, skipping'.format(path))
         self.data = np.concatenate(data)
@@ -48,16 +63,19 @@ class HcpeDataLoader:
             self.move_label[i] = make_move_label(
                 hcpe['bestMove16'], self.board.turn)
             self.result[i] = make_result(hcpe['gameResult'], self.board.turn)
+            self.comment_index[i] = hcpe["comment_index"]
 
         if self.device.type == 'cpu':
             return (self.torch_features.clone(),
                     self.torch_move_label.clone(),
                     self.torch_result.clone(),
+                    self.torch_comment_index.clone(),
                     )
         else:
             return (self.torch_features.to(self.device),
                     self.torch_move_label.to(self.device),
                     self.torch_result.to(self.device),
+                    self.torch_comment_index.to(self.device),
                     )
 
     def sample(self):
