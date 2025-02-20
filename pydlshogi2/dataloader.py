@@ -5,7 +5,8 @@ import logging
 import torch
 
 from cshogi import Board
-from pydlshogi2.features import FEATURES_NUM, make_input_features, make_move_label, make_result
+from pydlshogi2.features import make_move_label, make_result
+from cshogi.dlshogi import make_input_features, FEATURES1_NUM, FEATURES2_NUM
 
 dtypeHcp = np.dtype((np.uint8, 32))
 dtypeEval = np.dtype(np.int16)
@@ -28,12 +29,14 @@ class HcpeDataLoader:
         self.device = device
         self.shuffle = shuffle
 
-        self.torch_features = torch.empty((batch_size, FEATURES_NUM, 9, 9), dtype=torch.float32, pin_memory=True)
+        self.torch_features1 = torch.empty((batch_size, FEATURES1_NUM, 9, 9), dtype=torch.float32, pin_memory=True)
+        self.torch_features2 = torch.empty((batch_size, FEATURES2_NUM, 9, 9), dtype=torch.float32, pin_memory=True)
         self.torch_move_label = torch.empty((batch_size), dtype=torch.int64, pin_memory=True)
         self.torch_result = torch.empty((batch_size, 1), dtype=torch.float32, pin_memory=True)
         self.torch_comment_index = torch.empty((batch_size), dtype=torch.int32, pin_memory=True)
 
-        self.features = self.torch_features.numpy()
+        self.features1 = self.torch_features1.numpy()
+        self.features2 = self.torch_features2.numpy()
         self.move_label = self.torch_move_label.numpy()
         self.result = self.torch_result.numpy().reshape(-1)
         self.comment_index = self.torch_comment_index.numpy()
@@ -56,23 +59,26 @@ class HcpeDataLoader:
         self.data = np.concatenate(data)
 
     def mini_batch(self, hcpevec):
-        self.features.fill(0)
+        self.features1.fill(0)
+        self.features2.fill(0)
         for i, hcpe in enumerate(hcpevec):
             self.board.set_hcp(hcpe['hcp'])
-            make_input_features(self.board, self.features[i])
+            make_input_features(self.board, self.features1[i], self.features2[i])
             self.move_label[i] = make_move_label(
                 hcpe['bestMove16'], self.board.turn)
             self.result[i] = make_result(hcpe['gameResult'], self.board.turn)
             self.comment_index[i] = hcpe["comment_index"]
 
         if self.device.type == 'cpu':
-            return (self.torch_features.clone(),
+            return (self.torch_features1.clone(),
+                    self.torch_features2.clone(),
                     self.torch_move_label.clone(),
                     self.torch_result.clone(),
                     self.torch_comment_index.clone(),
                     )
         else:
-            return (self.torch_features.to(self.device),
+            return (self.torch_features1.to(self.device),
+                    self.torch_features2.to(self.device),
                     self.torch_move_label.to(self.device),
                     self.torch_result.to(self.device),
                     self.torch_comment_index.to(self.device),
