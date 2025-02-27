@@ -21,29 +21,20 @@ def words_with_shogi_move(comment):
     # 棋譜表記のプレースホルダー置換
     modified_sentence = comment
     for i, move in enumerate(matches):
-        modified_sentence = modified_sentence.replace(move, f"▼{i}▼", 1)  # 1回ずつ置き換え
+        modified_sentence = modified_sentence.replace(move, f"PLACEHOLDER{i}", 1)  # 1回ずつ置き換え
 
     # MeCabで分かち書き
     split_sentence = mecab.parse(modified_sentence).strip().split()
 
     # プレースホルダーを元の棋譜表記に戻す
     result = []
-    found_star = False  # "▼" が現れたことを確認するフラグ
-
-    for word in split_sentence:
-        if word == "▼":  # "▼"が来た場合
-            if not found_star:  # 最初の"▼"のみインデックスとして扱う
-                found_star = True  # "▼" が見つかったのでフラグを立てる
-            else:
-                found_star = False   # 2回目以降の"▼"は無視してそのまま追加
-        elif found_star:  # "▼" の後が数字の場合
-            try:
-                index = int(word)  # 次のwordはインデックス
-                result.append(matches[index])  # 対応する棋譜表記を追加
-            except (IndexError, ValueError) as e:
-                print(f"Error: {e} '{word}' in the comment: {comment}")
-                pass  # 数字でない場合はスキップ
-            found_star = True  # フラグをリセット
+    
+    i = 0
+    while i < len(split_sentence):
+        if split_sentence[i] == "PLACEHOLDER" and i + 1 < len(split_sentence):  # "PLACEHOLDER"を見つけ、次の要素がある場合
+            result.append(matches[int(split_sentence[i + 1])])  # 連結して追加
+            i += 2  # "PLACEHOLDER" とその次の要素を処理したので、2つ進める
         else:
-            result.append(word)
+            result.append(split_sentence[i])  # それ以外の要素はそのまま追加
+            i += 1
     return result
