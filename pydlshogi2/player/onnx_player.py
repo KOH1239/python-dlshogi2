@@ -1,14 +1,19 @@
 ﻿import onnxruntime
 import numpy as np
+import sys
+sys.path.append("/workspace/python-dlshogi2")
+sys.path.append("/workspace/python-dlshogi2/pydlshogi2")
 
-from pydlshogi2.player.mcts_player import MCTSPlayer
+from pydlshogi2.player.settai_mcts_player import MCTSPlayer
 from cshogi.dlshogi import make_input_features, make_move_label, FEATURES1_NUM, FEATURES2_NUM
+
+
 
 class OnnxPlayer(MCTSPlayer):
     # USIエンジンの名前
     name = 'python-dlshogi-onnx'
     # デフォルトモデル
-    DEFAULT_MODELFILE = 'model/model-0000167.onnx'
+    DEFAULT_MODELFILE = '/workspace/model/model_resnet10_swish-072.onnx'
 
     # モデルのロード
     def load_model(self):
