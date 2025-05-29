@@ -43,7 +43,7 @@ comment_index_map = {}  # インデックスとコメントの対応を保存す
 current_index = 0  # コメントに割り当てるインデックス
 
 board = Board()
-with open("./comments_A_to_R.txt", "w", encoding="utf-8") as comment_file:
+with open("./comments_202505_all.txt", "w", encoding="utf-8") as comment_file:
     for file_list, f in zip([file_list_train, file_list_test], [f_train, f_test]):
         kif_num = 0
         position_num = 0
