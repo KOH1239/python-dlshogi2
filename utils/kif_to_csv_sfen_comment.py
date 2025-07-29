@@ -25,7 +25,7 @@ current_index = 0  # コメントに割り当てるインデックス
 moves_sequence = []
 
 board = Board()
-with open(f"./kif_comment_csv/{output_filename}.csv", "w", newline="", encoding="utf-8") as comment_file:
+with open(f"./{output_filename}.csv", "w", newline="", encoding="utf-8") as comment_file:
     writer = csv.writer(comment_file)
     writer.writerow(["sfen", "Comment"])
     
