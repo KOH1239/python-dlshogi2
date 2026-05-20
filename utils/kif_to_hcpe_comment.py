@@ -7,6 +7,7 @@ import os
 import glob
 from sklearn.model_selection import train_test_split
 from dlshogi.utils.remove_comment import remove_no_need_comment
+import csv
 
 dtypeHcp = np.dtype((np.uint8, 32))
 dtypeEval = np.dtype(np.int16)
@@ -43,7 +44,10 @@ comment_index_map = {}  # インデックスとコメントの対応を保存す
 current_index = 0  # コメントに割り当てるインデックス
 
 board = Board()
-with open("./comments_202505_all.txt", "w", encoding="utf-8") as comment_file:
+with open("./comments_202505_all_v3.csv", "w", encoding="utf-8") as comment_file:
+    csv_writer = csv.writer(comment_file)
+    csv_writer.writerow(['index', 'comment']) # ヘッダー
+
     for file_list, f in zip([file_list_train, file_list_test], [f_train, f_test]):
         kif_num = 0
         position_num = 0
@@ -64,6 +68,7 @@ with open("./comments_202505_all.txt", "w", encoding="utf-8") as comment_file:
                     # 不正な指し手のある棋譜を除外
                     if not board.is_legal(move):
                         raise Exception()
+                    board.push(move)
                     comment = remove_no_need_comment(comment, kif.names)
                     if comment:    
                         hcpe = hcpes[p]
@@ -82,10 +87,10 @@ with open("./comments_202505_all.txt", "w", encoding="utf-8") as comment_file:
                         # コメントにインデックスを割り当て
                         if comment not in comment_index_map:
                             comment_index_map[comment] = current_index
-                            comment_file.write(f"{current_index}: {comment}\n")  # インデックスとコメントをファイルに書き込む
+                            csv_writer.writerow([current_index, comment])
                             current_index += 1
                         hcpe['comment_index'] = comment_index_map[comment]
-                    board.push(move)
+                    
             except Exception as e:
                 print(f'skip {filepath}')
                 print(f"Exception: {e}")
